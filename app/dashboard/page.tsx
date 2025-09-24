@@ -1,38 +1,29 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
-
-interface Usage {
-  id: string;
-  text: string;
-  created_at: string;
-}
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const [usage, setUsage] = useState<Usage[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchUsage = async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { data: _data, error } = await supabase
-        .from("usage_logs")
-        .select("*");
-      if (_data) setUsage(_data as Usage[]);
-    };
-    fetchUsage();
+    const session = supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.push('/auth');
+      } else {
+        setUser(data.session.user);
+      }
+    });
   }, []);
 
+  if (!user) return <div>Loading...</div>;
+
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <ul className="mt-4">
-        {usage.map((item) => (
-          <li key={item.id}>
-            {item.text} - {item.created_at}
-          </li>
-        ))}
-      </ul>
+    <div>
+      <h1>Welcome, {user.email}</h1>
+      <p>You can now generate voice content, manage credits, and see payments.</p>
     </div>
   );
 }

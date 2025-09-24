@@ -1,14 +1,15 @@
-import Link from "next/link";
+// app/layout.tsx
+import './globals.css'
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <div>
-      <nav className="p-4 bg-gray-100">
-        <Link href="/">
-          <span className="text-blue-500 cursor-pointer">Home</span>
-        </Link>
-      </nav>
-      <main>{children}</main>
-    </div>
-  );
+export const metadata = {
+  title: 'MyVoice',
+  description: 'Voice generation app',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <html lang="en"><body>{children}</body></html>
 }
