@@ -8,8 +8,17 @@ interface PayPalProps {
 
 interface PayPalActions {
   order: {
-    create: (data: any) => Promise<string>;
+    create: (order: { purchase_units: { amount: { value: string } }[] }) => Promise<string>;
     capture: () => Promise<void>;
+  };
+}
+
+interface PayPalButtonsWindow extends Window {
+  paypal?: {
+    Buttons: (config: {
+      createOrder: (_data: unknown, actions: PayPalActions) => Promise<string>;
+      onApprove: (_data: unknown, actions: PayPalActions) => Promise<void>;
+    }) => { render: (selector: string) => void };
   };
 }
 
@@ -19,19 +28,16 @@ export default function PayPalButtons({ amount }: PayPalProps) {
     script.src = "https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID";
 
     script.addEventListener("load", () => {
-      // PayPal SDK injected globally
-      const win = window as typeof window & { paypal?: any };
+      const win = window as PayPalButtonsWindow;
       if (!win.paypal) return;
 
-      const paypal = win.paypal;
-
-      paypal.Buttons({
-        createOrder: (_data: unknown, actions: { order: PayPalActions["order"] }) => {
+      win.paypal.Buttons({
+        createOrder: (_data, actions) => {
           return actions.order.create({
             purchase_units: [{ amount: { value: amount.toString() } }],
           });
         },
-        onApprove: (_data: unknown, actions: { order: PayPalActions["order"] }) => {
+        onApprove: (_data, actions) => {
           return actions.order.capture().then(() => {
             alert("Payment completed!");
           });
@@ -40,6 +46,7 @@ export default function PayPalButtons({ amount }: PayPalProps) {
     });
 
     document.body.appendChild(script);
+
     return () => {
       document.body.removeChild(script);
     };
