@@ -1,35 +1,30 @@
+// Node.js compatible Eleven TTS
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // service role for server-side
-);
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!;
 
-export async function tryConsumeCredits(userId: string, amount: number) {
-  // Call your pre-defined SQL function in Supabase
-  const { data, error } = await supabase.rpc("try_consume_credits", {
-    user_uuid: userId,
-    amount: amount,
-  });
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  if (error) throw error;
-  return data as boolean;
-}
+export default async function handler(req: any, res: any) {
+  try {
+    const { text, voice } = req.body;
 
-export async function generateVoice(text: string) {
-  const response = await fetch(
-    "https://api.elevenlabs.io/v1/text-to-speech/YOUR_VOICE_ID",
-    {
+    const response = await fetch("https://api.elevenlabs.io/v1/text-to-speech", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "xi-api-key": process.env.ELEVENLABS_API_KEY!,
+        "xi-api-key": process.env.ELEVEN_LABS_API_KEY!,
       },
-      body: JSON.stringify({ text }),
-    }
-  );
+      body: JSON.stringify({ text, voice }),
+    });
 
-  if (!response.ok) throw new Error("TTS generation failed");
-  const audioBuffer = await response.arrayBuffer();
-  return Buffer.from(audioBuffer);
+    const audioBuffer = await response.arrayBuffer();
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.status(200).send(Buffer.from(audioBuffer));
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ success: false, error: errorMessage });
+  }
 }
